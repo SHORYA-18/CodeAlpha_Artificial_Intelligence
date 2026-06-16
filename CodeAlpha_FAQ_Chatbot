@@ -1,0 +1,102 @@
+chatbot.py :- 
+
+import nltk
+import spacy
+from nltk.corpus import stopwords
+import string
+from collections import Counter
+import math
+
+# Download stopwords (first run only)
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english'))
+
+# Load SpaCy model
+nlp = spacy.load("en_core_web_sm")
+
+# Expanded FAQs dataset
+faqs = [
+    ("What is your return policy?", "You can return products within 30 days."),
+    ("How to contact support?", "Email us at support@example.com."),
+    ("Do you offer discounts?", "Yes, seasonal discounts are available."),
+    ("What payment methods do you accept?", "We accept credit cards, debit cards, UPI, and PayPal."),
+    ("How long does shipping take?", "Standard shipping takes 5-7 business days."),
+    ("Can I track my order?", "Yes, you can track your order using the tracking link sent to your email."),
+    ("Do you ship internationally?", "Yes, we ship to most countries worldwide."),
+    ("Is there a warranty on products?", "Yes, all products come with a 1-year warranty."),
+    ("Can I cancel my order?", "Orders can be canceled within 24 hours of purchase."),
+    ("Do you have a mobile app?", "Yes, our mobile app is available on Android and iOS."),
+    ("What are your customer service hours?", "Our support team is available 9 AM to 9 PM IST."),
+    ("Do you provide installation services?", "Yes, installation is available for selected products."),
+    ("Can I change my delivery address?", "Yes, you can update your delivery address before the order is shipped."),
+    ("Do you offer gift wrapping?", "Yes, gift wrapping is available at checkout."),
+    ("How do I reset my password?", "Click on 'Forgot Password' on the login page to reset your password.")
+]
+
+# Preprocess text
+def preprocess(text):
+    doc = nlp(text.lower())
+    tokens = [token.lemma_ for token in doc if token.text not in string.punctuation and token.text not in stop_words]
+    return tokens
+
+# Cosine similarity
+def cosine_similarity(tokens1, tokens2):
+    vec1 = Counter(tokens1)
+    vec2 = Counter(tokens2)
+    all_words = set(vec1.keys()).union(set(vec2.keys()))
+
+    dot = sum(vec1[w] * vec2[w] for w in all_words)
+    mag1 = math.sqrt(sum(vec1[w]**2 for w in all_words))
+    mag2 = math.sqrt(sum(vec2[w]**2 for w in all_words))
+
+    return dot / (mag1 * mag2) if mag1 and mag2 else 0.0
+
+# Chatbot logic
+def chatbot(user_input):
+    user_tokens = preprocess(user_input)
+    best_score = -1
+    best_answer = "Sorry, I don't know that."
+
+    for q, a in faqs:
+        score = cosine_similarity(user_tokens, preprocess(q))
+        if score > best_score:
+            best_score = score
+            best_answer = a
+
+    # Apply threshold
+    if best_score < 0.3:
+        return "Sorry, I don't know that."
+    return best_answer
+
+
+# Run chatbot
+print("Welcome to FAQ Chatbot!")
+while True:
+    user_q = input("You: ")
+    if user_q.lower() in ["exit", "quit"]:
+        print("Bot: Goodbye!")
+        break
+    print("Bot:", chatbot(user_q))
+
+
+requirements.txt :-
+spacy
+nltk
+
+
+faqs.txt :-
+What is your return policy?|You can return products within 30 days.
+How to contact support?|Email us at support@example.com.
+Do you offer discounts?|Yes, seasonal discounts are available.
+What payment methods do you accept?", "We accept credit cards, debit cards, UPI, and PayPal.
+How long does shipping take?", "Standard shipping takes 5-7 business days.
+Can I track my order?", "Yes, you can track your order using the tracking link sent to your email.
+Do you ship internationally?", "Yes, we ship to most countries worldwide.
+Is there a warranty on products?", "Yes, all products come with a 1-year warranty.
+Can I cancel my order?", "Orders can be canceled within 24 hours of purchase.
+Do you have a mobile app?", "Yes, our mobile app is available on Android and iOS.
+What are your customer service hours?", "Our support team is available 9 AM to 9 PM IST.
+Do you provide installation services?", "Yes, installation is available for selected products.
+Can I change my delivery address?", "Yes, you can update your delivery address before the order is shipped."),
+Do you offer gift wrapping?", "Yes, gift wrapping is available at checkout.
+How do I reset my password?", "Click on 'Forgot Password' on the login page to reset your password.
